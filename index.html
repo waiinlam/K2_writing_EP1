@@ -11,7 +11,6 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            /* 外圍加上深色背景，讓遊戲主畫面更突出 */
             background-color: #b2ebf2; 
             display: flex;
             justify-content: center;
@@ -22,14 +21,13 @@
 
         #game-container {
             position: relative;
-            /* 鎖定遊戲畫面的長寬比例，確保背景圖在任何設備都不會變形或裁切 */
             height: 100vh;
             max-height: 100vh;
             max-width: 100vw;
-            aspect-ratio: 3 / 4.2; /* 貼合 6.png 的預估原始比例 */
+            aspect-ratio: 3 / 4.2; 
             
             background-image: url('6.png');
-            background-size: 100% 100%; /* 強制填滿鎖定比例的容器 */
+            background-size: 100% 100%; 
             background-position: center;
             background-repeat: no-repeat;
             box-shadow: 0 0 20px rgba(0,0,0,0.3);
@@ -60,7 +58,6 @@
 
         #safe-path {
             stroke: rgba(255, 255, 255, 0.45); 
-            /* 寬度會由 JavaScript 自動對齊綠色圈圈的寬度 */
             stroke-linecap: round;
         }
 
@@ -72,10 +69,9 @@
             opacity: 0.9;
         }
 
-        /* 直昇機縮小 */
         #helicopter {
             position: absolute;
-            width: 90px; /* 已縮小尺寸 */
+            width: 90px; 
             height: auto;
             z-index: 10;
             cursor: grab;
@@ -89,21 +85,18 @@
             transform: translate(-50%, -50%) scale(1.1);
         }
 
-        /* 終點圈：使用百分比精準貼合背景的綠色圖案 */
         #target-area {
             position: absolute;
-            /* 下方兩個百分比決定黃圈的大小和高低。若有 1~2mm 偏差，可微調這裡的數字 */
             width: 22.5%; 
             bottom: 4.2%; 
             
-            aspect-ratio: 1 / 1; /* 確保是正圓形 */
+            aspect-ratio: 1 / 1; 
             left: 50%;
             transform: translateX(-50%);
             
-            /* 使用 solid 實線邊框，更容易看清是否完美貼合圓周 */
             border: 6px solid #ffeb3b; 
             border-radius: 50%;
-            box-sizing: border-box; /* 關鍵：讓邊框往內計算，精準貼合 */
+            box-sizing: border-box; 
             z-index: 2;
             animation: blinkHint 1.2s infinite alternate;
             pointer-events: none;
@@ -209,8 +202,8 @@
     const successModal = document.getElementById('success-modal');
     const cheerSound = document.getElementById('cheer-sound');
 
-    // 確保 GitHub 上的檔名是全小寫的 3.png
-    const images = ['1.png', '2.png', '3.png', '4.jpg', '5.png'];
+    // 嚴格依照要求設定 1.png 到 5.png
+    const images = ['1.png', '2.png', '3.png', '4.png', '5.png'];
     let currentLevel = 0;
     
     let isDragging = false;
@@ -221,28 +214,22 @@
         const containerRect = container.getBoundingClientRect();
         const targetRect = targetArea.getBoundingClientRect();
 
-        // 設置起點：左右置中，高度設於 26% (雲朵下方)
         startX = containerRect.width / 2;
         startY = containerRect.height * 0.26; 
 
-        // 設置終點：黃色圓圈中心點
         targetX = (targetRect.left - containerRect.left) + targetRect.width / 2;
         targetY = (targetRect.top - containerRect.top) + targetRect.height / 2;
 
-        // 畫出安全通道
         safePath.setAttribute('x1', startX);
         safePath.setAttribute('y1', startY);
         safePath.setAttribute('x2', targetX);
         safePath.setAttribute('y2', targetY);
         
-        // 動態讓安全通道的寬度 = 綠色圓形的寬度
         safePath.setAttribute('stroke-width', targetRect.width);
         
-        // 容錯範圍為通道寬度的一半
         maxDeviation = targetRect.width / 2; 
     }
 
-    // 螢幕旋轉或改變大小時，重新計算座標
     window.addEventListener('resize', () => {
         updateLayout();
         if(!isDragging) resetHelicopterPosition();
@@ -251,7 +238,6 @@
     function startGame() {
         currentLevel = 0;
         successModal.classList.remove('show');
-        // 等待畫面完全渲染後再抓取尺寸
         setTimeout(() => {
             updateLayout();
             loadLevel();
@@ -292,7 +278,6 @@
         currentX = Math.max(0, Math.min(currentX, containerRect.width));
         currentY = Math.max(0, Math.min(currentY, containerRect.height));
 
-        // 如果超出通道左右範圍，彈回起點
         if (Math.abs(currentX - startX) > maxDeviation) {
             isDragging = false;
             helicopter.releasePointerCapture(e.pointerId);
@@ -321,7 +306,6 @@
             Math.pow(heliCenterY - targetY, 2)
         );
 
-        // 如果進入目標圈範圍 (判斷標準縮小以匹配縮小的直昇機)
         if (distance < targetArea.getBoundingClientRect().width / 1.5) { 
             levelComplete();
         } else {
@@ -354,7 +338,6 @@
         }, 2500); 
     }
 
-    // 初始化啟動
     window.onload = startGame;
 </script>
 </body>
