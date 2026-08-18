@@ -22,7 +22,8 @@
             height: 100vh;
             max-width: 600px; 
             margin: 0 auto;
-            background-image: url('6.jpg');
+            /* 修正1: 背景改回 6.png */
+            background-image: url('6.png');
             background-size: cover;
             background-position: center bottom;
             background-repeat: no-repeat;
@@ -42,7 +43,6 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
-        /* SVG 畫布：用來畫通道與連線 */
         #line-canvas {
             position: absolute;
             top: 0;
@@ -53,14 +53,13 @@
             z-index: 5;
         }
 
-        /* 安全直線通道 (提示小朋友拉動的路徑) */
+        /* 修正4: 安全通道修窄，與綠色 H 圖案寬度 (約 120px) 對齊 */
         #safe-path {
-            stroke: rgba(255, 255, 255, 0.45); /* 白色半透明 */
-            stroke-width: 260; /* 通道寬度 */
+            stroke: rgba(255, 255, 255, 0.5); 
+            stroke-width: 120; 
             stroke-linecap: round;
         }
 
-        /* 手指拉動時的黃色虛線 */
         #drag-line {
             stroke: #ffeb3b;
             stroke-width: 8;
@@ -69,10 +68,10 @@
             opacity: 0.9;
         }
 
-        /* 修正1：直昇機放大一倍 (原本 120px -> 240px) */
+        /* 修正3: 直昇機縮小 (調整為 160px，比例更適中) */
         #helicopter {
             position: absolute;
-            width: 240px; 
+            width: 160px; 
             height: auto;
             z-index: 10;
             cursor: grab;
@@ -86,15 +85,15 @@
             transform: translate(-50%, -50%) scale(1.05);
         }
 
-        /* 修正2：對齊背景綠色圖案，並按比例放大提示圈 */
+        /* 修正2: 黃色終點圈對齊綠色圖案位置與大小 */
         #target-area {
             position: absolute;
-            bottom: 3%; /* 對準背景 6.jpg 的 H 圖示位置 */
+            bottom: 6.5%; /* 往下對齊綠色 H 的圓心 */
             left: 50%;
             transform: translateX(-50%);
-            width: 160px;
-            height: 160px;
-            border: 8px dashed #ffeb3b;
+            width: 120px; /* 寬度與背景 H 圈一致 */
+            height: 120px;
+            border: 6px dashed #ffeb3b;
             border-radius: 50%;
             z-index: 2;
             animation: blinkHint 1.5s infinite alternate;
@@ -106,7 +105,6 @@
             100% { transform: translateX(-50%) scale(1.1); opacity: 1; box-shadow: 0 0 30px #ffeb3b; }
         }
 
-        /* 修正4：每頁完成的讚賞畫面 */
         .modal {
             position: absolute;
             top: 0;
@@ -120,9 +118,7 @@
             z-index: 100;
         }
 
-        /* 單關完成彈窗 (白色半透明底) */
         #level-modal { background: rgba(255,255,255,0.85); }
-        /* 最終完成彈窗 (黑色半透明底) */
         #success-modal { background: rgba(0,0,0,0.6); }
 
         .modal.show {
@@ -139,7 +135,7 @@
         }
 
         #level-modal .modal-text {
-            color: #ff5722; /* 鮮艷的橙色文字 */
+            color: #ff5722;
             text-shadow: 2px 2px 5px rgba(0,0,0,0.1);
         }
 
@@ -173,30 +169,23 @@
     <div id="progress-bar">🚁 0/5</div>
     
     <svg id="line-canvas">
-        <!-- 這是引導小朋友的安全通道 -->
         <line id="safe-path" x1="0" y1="0" x2="0" y2="0" />
         <line id="drag-line" x1="0" y1="0" x2="0" y2="0" style="display: none;" />
     </svg>
 
-    <!-- 降落目標框 -->
     <div id="target-area"></div>
-    
-    <!-- 直昇機圖片 -->
     <img id="helicopter" src="1.png" alt="直昇機" draggable="false" />
 
-    <!-- 修正4：每一關完成的鼓勵畫面 -->
     <div id="level-modal" class="modal">
         <div class="emoji-art">🌟🚁🎉</div>
         <div class="modal-text">欣賞你努力嘗試！</div>
     </div>
 
-    <!-- 最終過關畫面 -->
     <div id="success-modal" class="modal">
         <div class="modal-text">✨ 任務全部完成！✨<br>你真棒！</div>
         <button class="restart-btn" onclick="startGame()">再玩一次</button>
     </div>
     
-    <!-- 過關歡呼聲效 (使用Google開源免費音效) -->
     <audio id="cheer-sound" src="https://actions.google.com/sounds/v1/crowds/children_cheering.ogg" preload="auto"></audio>
 </div>
 
@@ -211,37 +200,34 @@
     const successModal = document.getElementById('success-modal');
     const cheerSound = document.getElementById('cheer-sound');
 
-    // 遊戲狀態與圖片設定 (包含 4.jpg)
+    // 如果第3關出不來，請檢查這裡的 '3.png' 是否與你 GitHub 上的檔名完全一致 (包括小寫)
     const images = ['1.png', '2.png', '3.png', '4.jpg', '5.png'];
     let currentLevel = 0;
     
     let isDragging = false;
     let startX = 0, startY = 0, targetX = 0, targetY = 0;
     
-    const initTopPercent = 15;
-    const maxDeviation = 130; // 偏離通道的容忍度 (剛好是通道寬度 260 的一半)
+    // 修正: 起點移至 28% 的高度，確保直昇機位於雲朵下方
+    const initTopPercent = 28; 
+    // 修正: 通道變窄後，容忍度也跟著調低為 60 (通道寬度 120 的一半)
+    const maxDeviation = 60; 
 
-    // 更新通道與座標位置
     function updateLayout() {
         const containerRect = container.getBoundingClientRect();
         const targetRect = targetArea.getBoundingClientRect();
 
-        // 設定起點座標
         startX = containerRect.width / 2;
         startY = (containerRect.height * initTopPercent) / 100;
 
-        // 設定終點座標 (目標圖案的中心)
         targetX = (targetRect.left - containerRect.left) + targetRect.width / 2;
         targetY = (targetRect.top - containerRect.top) + targetRect.height / 2;
 
-        // 繪製白色安全通道
         safePath.setAttribute('x1', startX);
         safePath.setAttribute('y1', startY);
         safePath.setAttribute('x2', targetX);
         safePath.setAttribute('y2', targetY);
     }
 
-    // 當螢幕翻轉或調整大小時，重新計算路徑
     window.addEventListener('resize', updateLayout);
 
     function startGame() {
@@ -258,13 +244,11 @@
     }
 
     function resetHelicopterPosition() {
-        helicopter.style.transition = 'top 0.4s ease, left 0.4s ease'; // 彈回起動畫
+        helicopter.style.transition = 'top 0.4s ease, left 0.4s ease'; 
         helicopter.style.left = `${startX}px`;
         helicopter.style.top = `${startY}px`;
         dragLine.style.display = 'none';
     }
-
-    // --- 拖曳邏輯 ---
 
     helicopter.addEventListener('pointerdown', (e) => {
         isDragging = true;
@@ -284,17 +268,15 @@
         let currentX = e.clientX - containerRect.left;
         let currentY = e.clientY - containerRect.top;
 
-        // 邊界限制
         currentX = Math.max(0, Math.min(currentX, containerRect.width));
         currentY = Math.max(0, Math.min(currentY, containerRect.height));
 
-        // 修正3：檢查是否偏離通道！
-        // 如果手指左右偏離起點超過 130px，就判定為出界
+        // 如果超出通道左右 60px 範圍，就彈回起點
         if (Math.abs(currentX - startX) > maxDeviation) {
             isDragging = false;
             helicopter.releasePointerCapture(e.pointerId);
-            resetHelicopterPosition(); // 彈回起點
-            return; // 終止這次移動
+            resetHelicopterPosition(); 
+            return; 
         }
 
         helicopter.style.left = `${currentX}px`;
@@ -318,7 +300,7 @@
             Math.pow(heliCenterY - targetY, 2)
         );
 
-        if (distance < 90) { // 降落判定範圍稍微放大，配合放大後的直昇機
+        if (distance < 70) { 
             levelComplete();
         } else {
             resetHelicopterPosition();
@@ -328,34 +310,29 @@
     function levelComplete() {
         dragLine.style.display = 'none';
         
-        // 將直昇機精準吸附到 H 圓心
         helicopter.style.transition = 'all 0.3s';
         helicopter.style.left = `${targetX}px`;
         helicopter.style.top = `${targetY}px`;
         
-        // 播放過關歡呼聲
-        cheerSound.currentTime = 0; // 重置音效
+        cheerSound.currentTime = 0; 
         cheerSound.play().catch(e => console.log("瀏覽器阻擋自動播放音效"));
 
-        // 顯示該關卡的讚賞畫面
         levelModal.classList.add('show');
         
-        // 停頓 2.5 秒，讓小朋友聽歡呼聲及看畫面，然後進入下一關
         setTimeout(() => {
             levelModal.classList.remove('show');
             currentLevel++;
             
             if (currentLevel >= images.length) {
                 progressBar.innerText = `🚁 5/5`;
-                successModal.classList.add('show'); // 終極過關畫面
+                successModal.classList.add('show'); 
             } else {
                 loadLevel();
             }
         }, 2500); 
     }
 
-    // 啟動遊戲
-    setTimeout(startGame, 100); // 延遲一點啟動以確保佈局已加載
+    setTimeout(startGame, 100); 
 </script>
 </body>
 </html>
