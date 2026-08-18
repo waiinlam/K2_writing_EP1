@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <!-- 防止小朋友雙擊放大或拉動網頁 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>直昇機降落任務</title>
+    <style>
+        /* 重置基本樣式，防止網頁滾動 */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #e0f7fa;
+            font-family: 'Comic Sans MS', 'Arial Rounded MT Bold', sans-serif;
+            touch-action: none; /* 關鍵：防止所有原生觸控滾動行為 */
+        }
+
+        /* 遊戲主要容器 (響應式設計) */
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            max-width: 600px; /* 平板/電腦端限制最大寬度，保持比例 */
+            margin: 0 auto;
+            background-image: url('6.png');
+            background-size: cover;
+            background-position: center bottom;
+            background-repeat: no-repeat;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        /* 左上角進度顯示 */
+        #progress-bar {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 28px;
+            z-index: 10;
+            background: rgba(255,255,255,0.7);
+            padding: 5px 15px;
+            border-radius: 20px;
+        }
+
+        /* 畫線用的 SVG 畫布 */
+        #line-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* 確保不會阻擋點擊 */
+            z-index: 5;
+        }
+
+        /* 拖拉時顯示的虛線 */
+        #drag-line {
+            stroke: #ffeb3b;
+            stroke-width: 8;
+            stroke-dasharray: 15;
+            stroke-linecap: round;
+            opacity: 0.8;
+        }
+
+        /* 直昇機 */
+        #helicopter {
+            position: absolute;
+            width: 120px; /* 適合小朋友點擊的大小 */
+            height: auto;
+            z-index: 10;
+            cursor: grab;
+            transform: translate(-50%, -50%);
+            /* 去背景技巧：如果圖片是白底，這會將白色變透明。若是透明 PNG 可移除此行 */
+            mix-blend-mode: multiply; 
+            transition: transform 0.1s;
+        }
+        
+        #helicopter:active {
+            cursor: grabbing;
+            transform: translate(-50%, -50%) scale(1.1); /* 按下時稍微放大 */
+        }
+
+        /* 降落點提示圈 */
+        #target-area {
+            position: absolute;
+            bottom: 8%; /* 根據 6.png 的 H 圖示位置調整 */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 120px;
+            border: 6px dashed #ffeb3b;
+            border-radius: 50%;
+            z-index: 2;
+            animation: blinkHint 1.5s infinite alternate;
+            pointer-events: none;
+        }
+
+        /* 閃爍動畫 */
+        @keyframes blinkHint {
+            0% { transform: translateX(-50%) scale(0.9); opacity: 0.5; box-shadow: 0 0 10px #ffeb3b; }
+            100% { transform: translateX(-50%) scale(1.1); opacity: 1; box-shadow: 0 0 30px #ffeb3b; }
+        }
+
+        /* 完成過關的彈出訊息 */
+        #success-modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        #success-modal.show {
+            display: flex;
+            animation: popIn 0.5s ease-out forwards;
+        }
+
+        .success-text {
+            color: #fff;
+            font-size: 40px;
+            font-weight: bold;
+            text-shadow: 2px 2px 10px rgba(0,0,0,0.5);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .restart-btn {
+            padding: 15px 30px;
+            font-size: 24px;
+            background-color: #ff9800;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="progress-bar">🚁 0/5</div>
+    
+    <svg id="line-canvas">
+        <line id="drag-line" x1="0" y1="0" x2="0" y2="0" style="display: none;" />
+    </svg>
+
+    <!-- 降落目標框 -->
+    <div id="target-area"></div>
+    
+    <!-- 直昇機圖片 -->
+    <img id="helicopter" src="1.png" alt="直昇機" draggable="false" />
+
+    <!-- 成功畫面 -->
+    <div id="success-modal">
+        <div class="success-text">✨ 你真努力！✨</div>
+        <button class="restart-btn" onclick="startGame()">再玩一次</button>
+    </div>
+</div>
+
+<script>
+    const helicopter = document.getElementById('helicopter');
+    const container = document.getElementById('game-container');
+    const targetArea = document.getElementById('target-area');
+    const dragLine = document.getElementById('drag-line');
+    const progressBar = document.getElementById('progress-bar');
+    const successModal = document.getElementById('success-modal');
+
+    // 遊戲狀態
+    const images = ['1.png', '2.png', '3.png', '4.png', '5.png'];
+    let currentLevel = 0;
+    
+    // 座標紀錄
+    let isDragging = false;
+    let startX = 0, startY = 0;
+    
+    // 初始位置設定 (距離頂部 15%, 左右居中)
+    const initTopPercent = 15;
+    const initLeftPercent = 50;
+
+    function startGame() {
+        currentLevel = 0;
+        successModal.classList.remove('show');
+        loadLevel();
+    }
+
+    function loadLevel() {
+        // 更新進度與圖片
+        progressBar.innerText = `🚁 ${currentLevel}/5`;
+        helicopter.src = images[currentLevel];
+        
+        // 重置直昇機位置
+        resetHelicopterPosition();
+    }
+
+    function resetHelicopterPosition() {
+        helicopter.style.transition = 'top 0.4s ease, left 0.4s ease'; // 加上動畫使其平滑彈回
+        helicopter.style.top = `${initTopPercent}%`;
+        helicopter.style.left = `${initLeftPercent}%`;
+        dragLine.style.display = 'none';
+    }
+
+    // --- 核心：觸控與滑鼠拖曳邏輯 (使用 Pointer Events 支援所有裝置) ---
+
+    helicopter.addEventListener('pointerdown', (e) => {
+        isDragging = true;
+        helicopter.style.transition = 'none'; // 拖曳時關閉動畫，跟隨手指
+        
+        // 記錄初始座標，用於畫線
+        const containerRect = container.getBoundingClientRect();
+        startX = (containerRect.width * initLeftPercent) / 100;
+        startY = (containerRect.height * initTopPercent) / 100;
+
+        // 設定線條起點
+        dragLine.setAttribute('x1', startX);
+        dragLine.setAttribute('y1', startY);
+        dragLine.style.display = 'block';
+
+        // 捕獲游標，即使手指滑出圖片範圍也能繼續觸發
+        helicopter.setPointerCapture(e.pointerId);
+    });
+
+    helicopter.addEventListener('pointermove', (e) => {
+        if (!isDragging) return;
+        
+        const containerRect = container.getBoundingClientRect();
+        
+        // 計算手指在容器內的位置
+        let currentX = e.clientX - containerRect.left;
+        let currentY = e.clientY - containerRect.top;
+
+        // 邊界限制 (防止拉到畫面外)
+        currentX = Math.max(0, Math.min(currentX, containerRect.width));
+        currentY = Math.max(0, Math.min(currentY, containerRect.height));
+
+        // 移動直昇機圖片
+        helicopter.style.left = `${currentX}px`;
+        helicopter.style.top = `${currentY}px`;
+
+        // 畫線：更新線條終點為手指位置
+        dragLine.setAttribute('x2', currentX);
+        dragLine.setAttribute('y2', currentY);
+    });
+
+    helicopter.addEventListener('pointerup', (e) => {
+        if (!isDragging) return;
+        isDragging = false;
+        helicopter.releasePointerCapture(e.pointerId);
+
+        // 判斷是否成功降落
+        const heliRect = helicopter.getBoundingClientRect();
+        const targetRect = targetArea.getBoundingClientRect();
+
+        // 取得兩者中心點
+        const heliCenterX = heliRect.left + heliRect.width / 2;
+        const heliCenterY = heliRect.top + heliRect.height / 2;
+        const targetCenterX = targetRect.left + targetRect.width / 2;
+        const targetCenterY = targetRect.top + targetRect.height / 2;
+
+        // 計算距離 (如果距離小於目標區半徑，算作成功)
+        const distance = Math.sqrt(
+            Math.pow(heliCenterX - targetCenterX, 2) + 
+            Math.pow(heliCenterY - targetCenterY, 2)
+        );
+
+        if (distance < 70) {
+            // 成功降落
+            levelComplete();
+        } else {
+            // 距離太遠，彈回起點
+            resetHelicopterPosition();
+        }
+    });
+
+    function levelComplete() {
+        dragLine.style.display = 'none';
+        
+        // 播放簡單的吸附動畫
+        helicopter.style.transition = 'all 0.3s';
+        helicopter.style.left = '50%';
+        helicopter.style.top = targetArea.style.bottom || '88%'; // 吸附到底部 H 位置
+        
+        // 短暫延遲後進入下一關
+        setTimeout(() => {
+            currentLevel++;
+            if (currentLevel >= images.length) {
+                progressBar.innerText = `🚁 5/5`;
+                successModal.classList.add('show');
+            } else {
+                loadLevel();
+            }
+        }, 600); // 停留 0.6 秒讓小朋友看清楚已降落
+    }
+
+    // 初始化遊戲
+    startGame();
+</script>
+</body>
+</html>
