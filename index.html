@@ -11,33 +11,38 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background-color: #e0f7fa;
+            /* 外圍加上深色背景，讓遊戲主畫面更突出 */
+            background-color: #b2ebf2; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
             font-family: 'Comic Sans MS', 'Arial Rounded MT Bold', sans-serif;
             touch-action: none; 
         }
 
         #game-container {
             position: relative;
-            width: 100vw;
+            /* 鎖定遊戲畫面的長寬比例，確保背景圖在任何設備都不會變形或裁切 */
             height: 100vh;
-            max-width: 600px; 
-            margin: 0 auto;
-            /* 修正1: 背景改回 6.png */
+            max-height: 100vh;
+            max-width: 100vw;
+            aspect-ratio: 3 / 4.2; /* 貼合 6.png 的預估原始比例 */
+            
             background-image: url('6.png');
-            background-size: cover;
-            background-position: center bottom;
+            background-size: 100% 100%; /* 強制填滿鎖定比例的容器 */
+            background-position: center;
             background-repeat: no-repeat;
-            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
             overflow: hidden;
         }
 
         #progress-bar {
             position: absolute;
-            top: 20px;
-            left: 20px;
-            font-size: 28px;
+            top: 15px;
+            left: 15px;
+            font-size: 24px;
             z-index: 10;
-            background: rgba(255,255,255,0.8);
+            background: rgba(255,255,255,0.85);
             padding: 5px 15px;
             border-radius: 20px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
@@ -53,10 +58,9 @@
             z-index: 5;
         }
 
-        /* 修正4: 安全通道修窄，與綠色 H 圖案寬度 (約 120px) 對齊 */
         #safe-path {
-            stroke: rgba(255, 255, 255, 0.5); 
-            stroke-width: 120; 
+            stroke: rgba(255, 255, 255, 0.45); 
+            /* 寬度會由 JavaScript 自動對齊綠色圈圈的寬度 */
             stroke-linecap: round;
         }
 
@@ -68,10 +72,10 @@
             opacity: 0.9;
         }
 
-        /* 修正3: 直昇機縮小 (調整為 160px，比例更適中) */
+        /* 直昇機縮小 */
         #helicopter {
             position: absolute;
-            width: 160px; 
+            width: 90px; /* 已縮小尺寸 */
             height: auto;
             z-index: 10;
             cursor: grab;
@@ -82,27 +86,32 @@
         
         #helicopter:active {
             cursor: grabbing;
-            transform: translate(-50%, -50%) scale(1.05);
+            transform: translate(-50%, -50%) scale(1.1);
         }
 
-        /* 修正2: 黃色終點圈對齊綠色圖案位置與大小 */
+        /* 終點圈：使用百分比精準貼合背景的綠色圖案 */
         #target-area {
             position: absolute;
-            bottom: 6.5%; /* 往下對齊綠色 H 的圓心 */
+            /* 下方兩個百分比決定黃圈的大小和高低。若有 1~2mm 偏差，可微調這裡的數字 */
+            width: 22.5%; 
+            bottom: 4.2%; 
+            
+            aspect-ratio: 1 / 1; /* 確保是正圓形 */
             left: 50%;
             transform: translateX(-50%);
-            width: 120px; /* 寬度與背景 H 圈一致 */
-            height: 120px;
-            border: 6px dashed #ffeb3b;
+            
+            /* 使用 solid 實線邊框，更容易看清是否完美貼合圓周 */
+            border: 6px solid #ffeb3b; 
             border-radius: 50%;
+            box-sizing: border-box; /* 關鍵：讓邊框往內計算，精準貼合 */
             z-index: 2;
-            animation: blinkHint 1.5s infinite alternate;
+            animation: blinkHint 1.2s infinite alternate;
             pointer-events: none;
         }
 
         @keyframes blinkHint {
-            0% { transform: translateX(-50%) scale(0.9); opacity: 0.5; box-shadow: 0 0 10px #ffeb3b; }
-            100% { transform: translateX(-50%) scale(1.1); opacity: 1; box-shadow: 0 0 30px #ffeb3b; }
+            0% { opacity: 0.4; box-shadow: 0 0 5px #ffeb3b; }
+            100% { opacity: 1; box-shadow: 0 0 25px #ffeb3b; }
         }
 
         .modal {
@@ -119,7 +128,7 @@
         }
 
         #level-modal { background: rgba(255,255,255,0.85); }
-        #success-modal { background: rgba(0,0,0,0.6); }
+        #success-modal { background: rgba(0,0,0,0.7); }
 
         .modal.show {
             display: flex;
@@ -127,7 +136,7 @@
         }
 
         .modal-text {
-            font-size: 38px;
+            font-size: 34px;
             font-weight: bold;
             text-align: center;
             margin: 20px 0;
@@ -144,7 +153,7 @@
             text-shadow: 2px 2px 10px rgba(0,0,0,0.5);
         }
 
-        .emoji-art { font-size: 80px; }
+        .emoji-art { font-size: 70px; }
 
         .restart-btn {
             padding: 15px 30px;
@@ -182,7 +191,7 @@
     </div>
 
     <div id="success-modal" class="modal">
-        <div class="modal-text">✨ 任務全部完成！✨<br>你真棒！</div>
+        <div class="modal-text">✨ 任務全部完成！✨<br>你真努力！</div>
         <button class="restart-btn" onclick="startGame()">再玩一次</button>
     </div>
     
@@ -200,41 +209,53 @@
     const successModal = document.getElementById('success-modal');
     const cheerSound = document.getElementById('cheer-sound');
 
-    // 如果第3關出不來，請檢查這裡的 '3.png' 是否與你 GitHub 上的檔名完全一致 (包括小寫)
-    const images = ['1.png', '2.png', '3.png', '4.png', '5.png'];
+    // 確保 GitHub 上的檔名是全小寫的 3.png
+    const images = ['1.png', '2.png', '3.png', '4.jpg', '5.png'];
     let currentLevel = 0;
     
     let isDragging = false;
     let startX = 0, startY = 0, targetX = 0, targetY = 0;
-    
-    // 修正: 起點移至 28% 的高度，確保直昇機位於雲朵下方
-    const initTopPercent = 28; 
-    // 修正: 通道變窄後，容忍度也跟著調低為 60 (通道寬度 120 的一半)
-    const maxDeviation = 60; 
+    let maxDeviation = 50; 
 
     function updateLayout() {
         const containerRect = container.getBoundingClientRect();
         const targetRect = targetArea.getBoundingClientRect();
 
+        // 設置起點：左右置中，高度設於 26% (雲朵下方)
         startX = containerRect.width / 2;
-        startY = (containerRect.height * initTopPercent) / 100;
+        startY = containerRect.height * 0.26; 
 
+        // 設置終點：黃色圓圈中心點
         targetX = (targetRect.left - containerRect.left) + targetRect.width / 2;
         targetY = (targetRect.top - containerRect.top) + targetRect.height / 2;
 
+        // 畫出安全通道
         safePath.setAttribute('x1', startX);
         safePath.setAttribute('y1', startY);
         safePath.setAttribute('x2', targetX);
         safePath.setAttribute('y2', targetY);
+        
+        // 動態讓安全通道的寬度 = 綠色圓形的寬度
+        safePath.setAttribute('stroke-width', targetRect.width);
+        
+        // 容錯範圍為通道寬度的一半
+        maxDeviation = targetRect.width / 2; 
     }
 
-    window.addEventListener('resize', updateLayout);
+    // 螢幕旋轉或改變大小時，重新計算座標
+    window.addEventListener('resize', () => {
+        updateLayout();
+        if(!isDragging) resetHelicopterPosition();
+    });
 
     function startGame() {
         currentLevel = 0;
         successModal.classList.remove('show');
-        updateLayout();
-        loadLevel();
+        // 等待畫面完全渲染後再抓取尺寸
+        setTimeout(() => {
+            updateLayout();
+            loadLevel();
+        }, 50);
     }
 
     function loadLevel() {
@@ -244,7 +265,7 @@
     }
 
     function resetHelicopterPosition() {
-        helicopter.style.transition = 'top 0.4s ease, left 0.4s ease'; 
+        helicopter.style.transition = 'top 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28), left 0.4s ease'; 
         helicopter.style.left = `${startX}px`;
         helicopter.style.top = `${startY}px`;
         dragLine.style.display = 'none';
@@ -271,7 +292,7 @@
         currentX = Math.max(0, Math.min(currentX, containerRect.width));
         currentY = Math.max(0, Math.min(currentY, containerRect.height));
 
-        // 如果超出通道左右 60px 範圍，就彈回起點
+        // 如果超出通道左右範圍，彈回起點
         if (Math.abs(currentX - startX) > maxDeviation) {
             isDragging = false;
             helicopter.releasePointerCapture(e.pointerId);
@@ -300,7 +321,8 @@
             Math.pow(heliCenterY - targetY, 2)
         );
 
-        if (distance < 70) { 
+        // 如果進入目標圈範圍 (判斷標準縮小以匹配縮小的直昇機)
+        if (distance < targetArea.getBoundingClientRect().width / 1.5) { 
             levelComplete();
         } else {
             resetHelicopterPosition();
@@ -332,7 +354,8 @@
         }, 2500); 
     }
 
-    setTimeout(startGame, 100); 
+    // 初始化啟動
+    window.onload = startGame;
 </script>
 </body>
 </html>
